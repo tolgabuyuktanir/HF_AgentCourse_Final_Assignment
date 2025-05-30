@@ -19,26 +19,51 @@ load_dotenv()
 
 @tool
 def add(x: int, y: int) -> int:
+    """Adds two numbers.
+    :arg x: The first number.
+    :arg y: The second number.
+    """
     return x + y
 
 @tool
 def subtract(x: int, y: int) -> int:
+    """Subtracts two numbers.
+    :arg x: The first number.
+    :arg y: The second number.
+    """
     return x - y
 @tool
 def multiply(x: int, y: int) -> int:
+    """Multiplies two numbers.
+    :arg x: The first number.
+    :arg y: The second number.
+    """
     return x * y
 
 @tool
 def divide(x: int, y: int) -> float:
+    """Divides two numbers.
+    :arg x: The first number.
+    :arg y: The second number.
+    :raises ValueError: If y is zero.
+    """
     if y == 0:
         raise ValueError("Cannot divide by zero.")
     return x / y
 
 @tool
 def modulus(x: int, y: int) -> int:
+    """Calculates the modulus of two numbers.
+    :arg x: The first number.
+    :arg y: The second number.
+    :raises ValueError: If y is zero.
+    """
     return x % y
 @tool
 def wiki_search(query: str) -> str:
+    """Searches Wikipedia for the given query and returns the top results.
+    :arg query: The search query.
+    """
     loader = WikipediaLoader(query=query, load_max_docs=2)
     docs = loader.load()
     formatted_search_docs = "\n\n---\n\n".join(
@@ -50,6 +75,9 @@ def wiki_search(query: str) -> str:
 
 @tool
 def web_search(query: str) -> str:
+    """Searches the web for the given query using Tavily and returns the top results.
+    :arg query: The search query.
+    """
     tavily_search = TavilySearchResults(query=query, num_results=3)
     results = tavily_search.run()
     formatted_results = "\n\n---\n\n".join(
@@ -60,6 +88,9 @@ def web_search(query: str) -> str:
 
 @tool
 def arvix_search(query: str) -> str:
+    """Searches Arxiv for the given query and returns the top results.
+    :arg query: The search query.
+    """
     loader = ArxivLoader(query=query, load_max_docs=3)
     docs = loader.load()
     formatted_search_docs = "\n\n---\n\n".join(
@@ -68,6 +99,7 @@ def arvix_search(query: str) -> str:
             for doc in docs
         ])
     return {"arxiv_results": formatted_search_docs}
+
 
 with open("system_prompt.txt", "r", encoding="utf-8") as f:
     system_prompt = f.read()
@@ -79,20 +111,20 @@ embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-b
 supabase: Client = create_client(
     os.environ.get("SUPABASE_URL"),
     os.environ.get("SUPABASE_SERVICE_KEY"))
-
+print("Supabase client created.")
 vector_store = SupabaseVectorStore(
     client=supabase,
     embedding= embeddings,
     table_name="documents",
     query_name="match_documents_langchain",
 )
-
+print("Vector store initialized with Supabase.")
 create_retriever_tool = create_retriever_tool(
     retriever=vector_store.as_retriever(),
     name="Question Search",
     description="A tool to retrieve similar questions from a vector store.",
 )
-
+print("Retriever tool created.")
 tools = [
     add,
     subtract,
@@ -153,7 +185,7 @@ def build_graph(provider: str = "huggingface") -> StateGraph:
 if __name__ == "__main__":
     question = "When was a picture of St. Thomas Aquinas first added to the Wikipedia page on the Principle of double effect?"
     # Build the graph
-    graph = build_graph(provider="groq")
+    graph = build_graph(provider="huggingface")
     # Run the graph
     messages = [HumanMessage(content=question)]
     messages = graph.invoke({"messages": messages})
